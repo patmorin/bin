@@ -1,0 +1,25 @@
+#!/bin/bash
+# Removes backup files produced by emacs
+
+filter="*~"
+
+if [[ $# == 0 ]]; then
+    all=.
+else
+    all=$@
+fi
+
+for d in $all; do
+    if [[ -d $d ]]; then
+	files=$d/$filter
+	for f in $files; do
+	    if [[ -f $f ]]; then
+		echo rm $f
+		rm $f
+	    fi
+	done
+	echo "entering $d"
+	$0 $d/*
+    fi
+done
+

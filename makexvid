@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# Use xvid codec
+OVC=xvid
+
+#DEVICE="-dvd-device cdrom1"
+
+snippet() {
+    SNIPPETOPTS="-ss 1:00 -endpos 60"
+}
+
+subtitles() {
+    SUBTITLEOPTS="-vobsubout subtitles -vobsuboutindex 0 -sid 0"
+}
+
+dvd_quality() {
+    OAC=copy
+    BITRATE=1000
+}
+
+high_quality() {
+    OAC=mp3lame
+    BITRATE=1000
+}
+
+medium_quality() {
+    OAC=mp3lame 
+    BITRATE=800
+}
+
+low_quality() {
+    OAC=mp3lame
+    BITRATE=678
+}
+
+dvd_quality
+
+if [ -z $1 ]; then
+    INPUT=dvd://
+else
+    INPUT=$1
+    shift;
+fi
+
+while [ ! -z $1 ]; do
+    case "$1" in
+	dvd)
+	    dvd_quality
+	    ;;
+	high|hi)
+	    high_quality
+	    ;;
+	medium)
+	    medium_quality
+	    ;;
+	low|lo)
+	    low_quality
+	    ;;
+	snippet)
+	    snippet
+	    ;;
+	subtitles)
+	    subtitles
+	    ;;
+	*)
+	    echo "Usage: $0 <infile> [dvd|high|hi|medium|low|lo} [<track_num>]"
+	    exit 1
+    esac
+    shift
+done
+XVIDOPTS="bitrate=$BITRATE"
+
+UNIQ=`date +%s`
+OUTPUT=movie-$OVC-$OAC-br$BITRATE-$UNIQ.avi
+
+rm -f frameno.avi xvid-twopass.stats
+mencoder $DEVICE $INPUT -ovc frameno -oac $OAC $SNIPPETOPTS $SUBTITLEOPTS -o frameno.avi
+mencoder $DEVICE $INPUT -ovc $OVC -oac $OAC -xvidencopts pass=1:$XVIDOPTS \
+	$SNIPPETOPTS -o /dev/null
+mencoder $DEVICE $INPUT -ovc $OVC -oac $OAC -xvidencopts pass=2:$XVIDOPTS \
+	$SNIPPETOPTS -o $OUTPUT
+rm -f frameno.avi xvid-twopass.stats
+exit 0

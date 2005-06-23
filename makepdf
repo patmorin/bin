@@ -1,0 +1,19 @@
+#!/bin/bash
+
+
+# This program is supposed to make a pdf file from a collection of bmp
+# images
+
+files=~/.kde/share/apps/ScanImages/*.bmp
+files=./*.bmp
+
+for f in $files; do
+	fp=`basename ${f%.bmp}.tiff`
+	echo "$f => /tmp/$fp"
+	convert -rotate 270 $f /tmp/$fp
+	tmpfiles="$tmpfiles /tmp/$fp"
+done
+echo "Making pdf file..."
+c42pdf $tmpfiles -o paper.pdf
+echo "Output is in paper.pdf"
+

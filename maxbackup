@@ -1,0 +1,21 @@
+#!/bin/bash
+# Make backups of home directories on Maxtor USB drive
+
+delayfile=/etc/maxbackup.delay
+tolerate=7
+
+if [[ -e /dev/sda1 ]]; then
+    mount -t ext2 -o sync /dev/sda1 /mnt/maxtor
+    /usr/local/sbin/pmbackup /home /mnt/maxtor/home
+    umount /mnt/maxtor
+    echo 0 > $delayfile
+else
+    missed=`cat $delayfile`
+    ((missed++))
+    if (( missed > tolerate )); then
+	echo "maxbackup: USB hard drive not attached, $missed backups missed"
+    fi
+    echo $missed > $delayfile
+fi
+
+

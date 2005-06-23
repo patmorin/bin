@@ -1,0 +1,11 @@
+#!/bin/bash
+
+dir=$1
+
+if [[ -d $dir ]]; then
+    dirname=`basename $dir`
+    tar czvf - "$dir" | ssh cg "cat > $dirname.tgz"
+else
+    echo "Usage $0 <directory>"
+    exit -1
+fi

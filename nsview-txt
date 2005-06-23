@@ -1,0 +1,6 @@
+#!/bin/bash
+
+cp $1 $1.txt
+netscape -remote 'openURL(file:'"$1.txt"')'
+#rm $1.txt
+

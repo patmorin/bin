@@ -1,0 +1,40 @@
+#!/bin/bash
+# Takes a file name argument and reads email addresses from stdin, one
+# per line
+# BUGS: If the message file contains a line with only a . then the file
+# will only be sent up until that line
+
+if [[ $# -eq 3 && $1 == "-s" ]]; then
+    subject=$2
+    message=$3    
+elif [[ $# -eq 1 ]]; then
+    message=$1
+    subject="No Subject"
+    echo "Warning: no subject specified, you have five seconds to abort"
+else
+    echo "Usage: $0 [-s <subject>] <filename>"
+    exit -1
+fi
+from="morin@cs.carleton.ca"
+
+#sendmail="/usr/sbin/sendmail"
+sendmail=`whereis -b sendmail | awk '{print $2}'`
+if [[ ! ( -x "$sendmail" ) ]]; then
+    echo "Can't find sendmail binary -- exiting"
+    exit -1
+fi
+echo "Using $sendmail"
+
+read address trailing
+while [[ "$address" != "" ]]; do
+    echo "sending to $address"
+    sleep 5
+    cat - "$message" <<.END | "$sendmail"
+From: $from
+To: $address
+Cc: $from
+Subject: $subject
+
+.END
+    read address trailing
+done

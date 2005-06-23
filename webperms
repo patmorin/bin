@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [[ $# == 0 ]]; then
+	all=.
+else
+	all=$@
+fi
+
+for d in $all; do
+	if [[ -d $d ]]; then
+		echo $d - executable
+		chmod 711 $d
+		$0 $d/*
+	else
+		echo $d - readable
+		chmod 644 $d
+	fi
+done
+

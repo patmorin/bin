@@ -1,0 +1,339 @@
+#!/usr/bin/perl
+
+
+#######################################################################
+# This is the configurable stuff, including input files, final grade
+# calculation and the mapping from numeric to letter grades
+########################################################################
+
+# Read list of student numbers
+if (!open(FILE, "<numbers.txt")) {
+    die("Can't open student number file numbers.txt");
+}
+$i = 0;
+while (<FILE>) {
+    if (/([0-9]{6,9})/) {
+	$numbers{$1} = $_;
+	$sortednumbers[$i++] = $1;
+    }
+}
+close(FILE);
+
+# Read marks from various files
+@a1files=("anthony1.txt", "hua1.txt", "yihui1.txt"); 
+%a1marks = &snarfmarks(@a1files);
+
+@a2files=("anthony2.txt", "hua2.txt", "yihui2.txt");
+%a2marks = &snarfmarks(@a2files);
+
+@MTfiles=("anthonyMT.txt", "huaMT.txt", "yihuiMT.txt");
+%MTmarks = &snarfmarks(@MTfiles);
+
+@a3files=("anthony3.txt", "hua3.txt", "yihui3.txt");
+%a3marks = &snarfmarks(@a3files);
+
+@a4files=("anthony4.txt", "hua4.txt");
+%a4marks = &snarfmarks(@a4files);
+
+@FEfiles=("patFE.txt");
+%FEmarks = &snarfmarks(@FEfiles);
+
+# Function for computing the student's final grade
+sub compute_final_mark {
+    my $sn= $_[0];
+    $default = $FEmarks{$sn}/16;
+    if ($a1marks{$sn} eq "*") {
+	$a1mark = $default * 10;
+    } else {
+	$a1mark = $a1marks{$sn}/22 * 10;
+    }
+    if ($a2marks{$sn} eq "*") {
+	$a2mark = $default * 10;
+    } else {
+	$a2mark = $a2marks{$sn}/19 * 10;
+    }
+    if ($MTmarks{$sn} eq "*") {
+	$MTmark = $default * 20;
+    } else {
+	$MTmark = $MTmarks{$sn}/9 * 20;
+    }
+    if ($a3marks{$sn} eq "*") {
+	$a3mark = $default * 10;
+    } else {
+	$a3mark = $a3marks{$sn}/12 * 10;
+    }
+    if ($a4marks{$sn} eq "*") {
+	$a4mark = $default * 10;
+    } else {
+	$a4mark = $a4marks{$sn}/11 * 10;
+    }
+    $FEmark = $FEmarks{$sn}/16*40;
+    return $a1mark + $a2mark + $MTmark + $a3mark + $a4mark + $FEmark;
+}
+
+# Numeric to grade letter conversions 
+my @breakers = (83, 79, 77.5,
+		75, 72, 69,
+		66, 62, 59,
+		56, 52, 49, 0);
+
+
+#######################################################################
+# Do not edit anything beyond this point
+#######################################################################
+my @roughletters = ("A", "A", "A", 
+		    "B", "B", "B", 
+		    "C", "C", "C", 
+		    "D", "D", "D", "F");
+my @letters = ("A+", "A", "A-", 
+	       "B+", "B", "B-", 
+	       "C+", "C", "C-", 
+	       "D+", "D", "D-", "F");
+my @pristinebreakers = (90, 85, 80,
+			77, 73, 70,
+			67, 63, 60,
+			57, 53, 50, 0);
+
+for ($i = 0; $i < scalar @breakers; $i++) {
+    if ($breakers[$i] > $pristinebreakers[$i]) {
+	print("Warning: Grade breaker for $letters[$i] is $breakers[$i]," .
+	      " more than $pristinebreakers[$i]\n");
+    }
+}
+
+<<<<<<< .mine
+# Compute final grades
+$n = 0;
+for $sn ( keys %numbers ) {
+    $finalmarks{$sn} = compute_final_mark($sn);
+    $marks[$n++] = $finalmarks{$sn};
+}
+
+# compute ranks
+@sortedmarks = sort {$a <=> $b} @marks;
+for $sn ( keys %numbers ) {
+    $i = (scalar @sortedmarks) - 1;
+    while ($sortedmarks[$i] > $finalmarks{$sn}) { $i--; }
+    $ranks{$sn} = (scalar @sortedmarks) - $i;
+}
+
+# Output results, including histogram
+
+print("STUDENT N.\tA1(22)\tA2(19)\tMT(9)\tA3(12)\tA4(11)\tFE(16)\tFINAL\tLETTER\tRANK\n\n");
+
+
+$count = 0;
+for $sn ( sort keys %numbers ) {
+=======
+# Compute final grades
+$n = 0;
+for $sn ( keys %numbers ) {
+    $finalmarks{$sn} = compute_final_mark($sn);
+    $marks[$n++] = $finalmarks{$sn};
+}
+
+# compute ranks
+@sortedmarks = sort {$a <=> $b} @marks;
+for $sn ( keys %numbers ) {
+    $i = (scalar @sortedmarks) - 1;
+    while ($sortedmarks[$i] > $finalmarks{$sn}) { $i--; }
+    $ranks{$sn} = (scalar @sortedmarks) - $i;
+}
+
+# Output results, including histogram
+
+print("Tentative final marks: Not official\n\n");
+
+print("STUDENT N.\tA1(22)\tA2(19)\tMT(9)\tA3(12)\tA4(11)\tFE(16)\tFINAL\tLETTER\tRANK\n\n");
+
+
+$count = 0;
+for $sn ( @sortednumbers ) {
+    #print("$numbers{$sn}");
+    printf("%s\t", $sn);
+    printmark($a1marks{$sn}); 
+    print("\t");
+    printmark($a2marks{$sn}); 
+    print("\t");
+    printmark($MTmarks{$sn}); 
+    print("\t");
+    printmark($a3marks{$sn}); 
+    print("\t");
+    printmark($a4marks{$sn}); 
+    print("\t");
+    printmark($FEmarks{$sn});	
+    print("\t");
+    if ($FEmarks{$sn}) {
+	$count++;
+	printmark($finalmarks{$sn});
+	print("\t");
+	$letter = mark2letter($finalmarks{$sn});
+	printf("%s", $letter);
+	$histogram{$letter}++;
+	$roughhistogram{mark2roughletter($finalmarks{$sn})}++;
+    } else {
+	printmark("");
+	print("\t");
+	printf("%s", "ABS");
+    }
+    printf("\t%4d", $ranks{$sn});
+    print("\n");
+=======
+    print("\t");
+    printmark($FEmarks{$sn});	
+    print("\t");
+    if ($FEmarks{$sn}) {
+	$count++;
+	printmark($finalmarks{$sn});
+	print("\t");
+	$letter = mark2letter($finalmarks{$sn});
+	printf("%s", $letter);
+	$histogram{$letter}++;
+	$roughhistogram{mark2roughletter($finalmarks{$sn})}++;
+    } else {
+	printmark("");
+	print("\t");
+	printf("%s", "ABS");
+    }
+    printf("\t%4d", $ranks{$sn});
+    print("\n\n");
+}
+
+print("\n\nSummary statistics - does not include ABS's\n");
+for $letter ( "A", "B", "C", "D", "F" ) {
+    $percent = $roughhistogram{$letter}/$count*100;
+    printf("%s\t%4d\t%6.2f%%: %s\n", $letter, $roughhistogram{$letter}, 
+	   $percent, visual_histogram($percent));
+}
+printf("TOTAL\t%4d\t%6.2f%%\n", $count, $count/$count * 100);
+
+print("\n\n");
+for $letter ( @letters ) {
+    $percent = $histogram{$letter}/$count*100;
+    printf("%s\t%4d\t%6.2f%%: %s\n", $letter, $histogram{$letter}, 
+	   $percent, visual_histogram($percent));
+}
+printf("TOTAL\t%4d\t%6.2f%%\n", $count, $count/$count * 100);
+
+
+sub visual_histogram {
+    my $percent = $_[0];
+    $visual = "";
+    for (my $i = 0; $i <= $percent; $i++) {
+	$visual = $visual."*";
+    }
+    return $visual;
+}
+
+sub mark2letter {
+    my $mark= $_[0];
+    $i = 0;
+    while ($mark < $breakers[$i]) { $i++; };
+    return $letters[$i];
+}
+
+
+sub mark2roughletter {
+    my $mark= $_[0];
+    $i = 0;
+    while ($mark < $breakers[$i]) { $i++; };
+    return $roughletters[$i];
+}
+
+=======
+
+print("\n\nSummary statistics - does not include ABS's\n");
+for $letter ( "A", "B", "C", "D", "F" ) {
+    $percent = $roughhistogram{$letter}/$count*100;
+    printf("%s\t%4d\t%6.2f%%: %s\n", $letter, $roughhistogram{$letter}, 
+	   $percent, visual_histogram($percent));
+}
+printf("TOTAL\t%4d\t%6.2f%%\n", $count, $count/$count * 100);
+
+print("\n\n");
+for $letter ( @letters ) {
+    $percent = $histogram{$letter}/$count*100;
+    printf("%s\t%4d\t%6.2f%%: %s\n", $letter, $histogram{$letter}, 
+	   $percent, visual_histogram($percent));
+}
+printf("TOTAL\t%4d\t%6.2f%%\n", $count, $count/$count * 100);
+
+
+sub visual_histogram {
+    my $percent = $_[0];
+    $visual = "";
+    for (my $i = 0; $i < $percent; $i++) {
+	$visual = $visual."=";
+    }
+    return $visual;
+}
+
+sub mark2letter {
+    my $mark= $_[0];
+    $i = 0;
+    while ($mark < $breakers[$i]) { $i++; };
+    return $letters[$i];
+}
+
+
+sub mark2roughletter {
+    my $mark= $_[0];
+    $i = 0;
+    while ($mark < $breakers[$i]) { $i++; };
+    return $roughletters[$i];
+}
+
+sub printmark {
+    my $mark = $_[0];
+    if ( $mark ) {
+	if ($mark eq "*") {
+	    printf("%6s", "*");
+	} else {
+	    printf("%6.2f", $mark);
+	}
+    } else {
+	printf("%6s", "-");
+    }
+}
+
+#printf("\nAVERAGE\t\t%6.2f\t%6.2f\t%6.2f\t%6.2f\t%6.2f\n",
+#       &average(%a1marks), &average(%a2marks), &average(%MTmarks),
+#       &average(%a3marks), &average(%a4marks));
+
+sub snarfmarks {
+    my @files = @_;
+    my %marks = ();
+    foreach $f (@files) {
+	if (!open(FILE, "<$f")) {
+	    die("Can't open $f\n");
+	}
+	while (<FILE>) {
+	    if (/([0-9]{6,9})[^0-9]+(\*|[0-9]+(\.[0-9]+)?)/) {
+		if ( $marks{$1} ) {
+		    printf("Warning: $f: Mark recorded twice for $1\n");
+		    $marks{$1} = &max($2, $marks{$1});
+		} else {
+		    $marks{$1} = $2;
+		}
+	    }
+	}
+	close(FILE);
+    }
+    return %marks;
+}
+
+sub max {
+    if ($_[0] > $_[1]) {
+	$max = $_[0];
+    } else {
+	$max = $_[1];
+    }
+}
+
+sub average {
+    my $sum = 0.0;
+    for my $sn (keys %_) {
+	$sum += $_{$sn};
+    }
+    return ($sum / (scalar keys %_));
+}

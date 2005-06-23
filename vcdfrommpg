@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [[ $# != 1 ]]; then
+	echo "Usage: $0 <mpegfile>"
+fi
+
+device=0,0,0
+driver=generic-mmc
+
+vcdimager $1
+cdrdao write --driver $driver --device $device videocd.cue

@@ -1,0 +1,129 @@
+#!/bin/bash
+#########################################################################
+# BUGS:
+#   No known bugs
+#########################################################################
+
+# Compare two files and return 0 if they're identical and 1 otherwise
+# Currently, this just checks if the dates are the same.  A more correct
+# implementation would use md5sum (see commented section) but this is
+# a lot faster, especially if there are a lot of big files
+function file_compare() {
+    local srcfile="$1"
+    local dstfile="$2"
+    [[ ( ! ( -e "$dstfile" ) ) || ( "$srcfile" -nt "$dstfile" ) \
+	|| ( "$srcfile" -ot "$dstfile" ) ]]
+#    if [[ -e "$dstfile" ]]; then
+#	dstinfo=`md5sum "$dstfile" | awk '{print $1}'`
+#	srcinfo=`md5sum "$srcfile" | awk '{print $1}'`
+#    else
+#	dstinfo="X"
+#	srcinfo="Y"
+#    fi
+#    [[ "$srcinfo" == "$dstinfo" ]]
+}
+
+# Rotate the backup copies of a file.
+function age_file() {
+    local dstfile="$1"
+    local i=$ncopies
+    # rotate the (up to $ncopies) copies of this file
+    [ -e "$dstfile".bk$i ] && $rm "$dstfile".bk$i
+    while [[ $((i--)) -gt 0 ]]; do
+	if [[ -e "$dstfile".bk$i ]]; then
+	    mv "$dstfile".bk$i "$dstfile".bk$((i+1))
+	fi
+    done
+}
+
+# Check the usage and read command line parameters
+[ $# != 2 ] && echo "Usage: $0 <srcdir> <dstdir>" && exit -1 
+srcdir="$1"
+dstdir="$2"
+
+# Some global variables
+dirlist="ls --quoting-style=shell -A -B"
+filelist="ls -l"
+ncopies=7
+linkcopy="cp -d -p"
+filecopy="cp -d -p"
+dircopy="cp -a -v"
+rm="rm -f"
+
+# Check that source and destination directory exist
+[[ ! ( -d "$srcdir" ) ]] && echo "Source directory $srcdir doesn't exist" \
+    && exit -1
+[[ ! ( -d "$dstdir" ) ]] && echo "Backup directory $dstdir doesn't exist" \
+    && exit -1
+
+
+# scan files in the destination directory, aging them if necessary
+for f in "$dstdir"/*.flgtmp "$dstdir"/.*.flgtmp
+do
+    $rm "$f"
+done
+for f in "$dstdir"/* "$dstdir"/.* 
+do
+    echo "Dst file $f"
+    bn=`basename "$f"`
+    [[ "$bn" == ".." || "$bn" == "." || "$bn" == "*" ]] && continue
+    srcfile="$srcdir"/"$bn"
+    dstfile="$f"
+    if [[ -h "$dstfile" ]]; then         # is this a symbolic link?
+	$rm "$dstfile"
+    elif [[ -d "$dstfile" ]]; then       # is this a directory?
+	if [[ ! ( -d "$srcfile" ) ]]; then
+	    $rm -r "$dstfile"            # this is very unforgiving
+	fi
+    elif [[ -f "$dstfile" ]]; then       # is this a regular file?
+	dstfile="${dstfile%.bk?}"
+	# Use a flag file "$dstfile.flgtmp" to show this file was processed
+	if [[ ! ( -e "$dstfile.flgtmp" ) ]]; then
+	    echo "" > "$dstfile.flgtmp"
+	    age_file "$dstfile"
+	    # check for deletion in source directory
+	    srcfile="$srcdir"/`basename "$dstfile"`
+	    if [[ ( ! ( -e "$srcfile" ) ) && -f "$dstfile" ]]; then
+		mv "$dstfile" "$dstfile".bk0
+	    fi
+	fi
+    else
+	[[ -e "$f" ]] && echo "Warning: Couldn't handle backup file $dstfile"
+    fi
+done
+for f in "$dstdir"/*.flgtmp "$dstdir"/.*.flgtmp
+do
+    $rm "$f"
+done
+
+
+# scan files in the source directory, copy them into the destination
+# directory if they are different than what is already there.
+for f in "$srcdir"/* "$srcdir"/.*
+do
+    echo "Src file $f"
+    bn=`basename "$f"`
+    [[ "$bn" == ".." || "$bn" == "." || "$bn" == "*" ]] && continue
+    srcfile="$f"
+    dstfile="$dstdir"/"$bn"
+    if [[ -h "$srcfile" ]]; then                         # symbolic link?
+	$linkcopy "$srcfile" "$dstfile"                  # anything else
+    elif [[ "$srcfile" != ".." && -d "$srcfile" ]]; then # a directory?
+	if [[ -d "$dstfile" ]]; then
+	    $0 "$srcfile" "$dstfile"        # recurse
+	else 
+	    $dircopy "$srcfile" "$dstdir"   # new directory, use cp -a
+	fi
+    elif [[ -f "$srcfile" ]]; then
+	if { file_compare "$srcfile" "$dstfile"; }; then
+	    if [[ -e "$dstfile" ]]; then
+		mv "$dstfile" "$dstfile".bk0
+	    fi
+	    $filecopy "$srcfile" "$dstfile"
+	fi
+    else
+	[[ -e "$f" ]] && echo "Warning: Didn't handle source file $srcfile"
+    fi
+done
+
+exit 0

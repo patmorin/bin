@@ -1,0 +1,78 @@
+#!/bin/bash
+
+
+cat <<-EOF
+<html>
+<head>
+<title>Image Collection</title>
+<link rel="stylesheet" src="http://cg.scs.carleton.ca/~morin/morin.css">
+</head>
+<body>
+<a href="images.zip">All Images</a> (zip file)<br><br>
+EOF
+
+i=-1
+j=0
+k=1
+args=($*)
+
+# make zip file
+zip images.zip $* > /dev/null 
+
+# make the individual html pages
+while [[ $j -lt ${#args[*]} ]]; do
+    if [[ $i -ge 0 ]]; then
+        ifile=${args[$i]}
+    else
+	ifile=
+    fi
+    jfile=${args[$j]}
+    if [[ $k -lt ${#args[*]} ]]; then
+	kfile=${args[$k]}
+    else
+	kfile=
+    fi
+    tmpfn=${jfile%.png}
+    tmpfn=${tmpfn%.png}
+    filename=$tmpfn.html
+    echo "<a href=\"$filename\">Image $k</a><br>"
+    echo "<html><head><title>$ifile</title>" > $filename
+    # echo "<link rel=\"stylesheet\"" >> $filename
+    # echo "href=\"http://cg.scs.carleton.ca/~morin/morin.css\">" >> $filename
+    echo "<body>" >> $filename
+    echo "<center>" >> $filename
+    echo "<p>" >> $filename
+    if [[ $ifile ]]; then
+	echo "<a href=\"${ifile%png}html\">Previous</a>" >> $filename
+	if [[ $kfile ]]; then
+	    echo "| <a href=\"${kfile%png}html\">Next</a>" >> $filename
+	fi
+    else
+	if [[ $kfile ]]; then
+	    echo "<a href=\"${kfile%png}html\">Next</a>" >> $filename
+	fi
+    fi
+    echo "</p>" >> $filename
+    echo "<img src=\"$jfile\">" >> $filename
+    echo "<p>" >> $filename
+    if [[ $ifile ]]; then
+	echo "<a href=\"${ifile%png}html\">Previous</a>" >> $filename
+	if [[ $kfile ]]; then
+	    echo "| <a href=\"${kfile%png}html\">Next</a></center>" >>$filename
+	fi
+    else
+	if [[ $kfile ]]; then
+	    echo "<a href=\"${kfile%png}html\">Next</a></center>" >> $filename
+	fi
+    fi
+    echo -e "</p>\n</center>\n</body>\n</html>" >> $filename
+    ((i++))
+    ((j++))
+    ((k++))
+done 
+
+cat <<EOF
+</body>
+</html>
+EOF
+

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [[ $# != 1 ]]; then
+    echo "Usage: $0 <filename>.ps"
+    exit -1
+fi
+ssh morin@ultra04.scs.carleton.ca "lpr -Pfaculty@argon" < $1
+

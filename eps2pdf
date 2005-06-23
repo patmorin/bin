@@ -1,0 +1,13 @@
+#!/bin/bash
+# Converts a set of .eps files to .pdf files
+# Usage : eps2pdf 
+
+files=*.eps
+for f in $files ; do
+    r=${f%.eps}
+    if [[  ! -e "$r.pdf"  ]]; then
+	echo "$r.eps => $r.pdf"
+	epstopdf "$r.eps" "--outfile=$r.pdf"
+    fi
+done
+

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+mv ~/.kde/share/apps/ScanImages/*.png .
+makeipages *.png > index.html
+

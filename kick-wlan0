@@ -1,0 +1,9 @@
+#!/bin/bash
+
+/sbin/ifdown wlan0
+/sbin/rmmod ndiswrapper
+sleep 5
+/sbin/modprobe ndiswrapper
+sleep 5
+/sbin/ifup wlan0
+

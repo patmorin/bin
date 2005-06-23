@@ -1,0 +1,28 @@
+#!/usr/bin/perl
+
+
+$qdir="/home/morin/.ask/queue";    # directory to delete old files in
+$old= 60*60*24*7;           # how many seconds is considered old
+
+opendir(DIR, $qdir) || die "can't opendir $qdir: $!";
+
+$nold = 0;
+$nyoung = 0;
+while ($file = readdir(DIR)) {
+    $filename = "$qdir/$file";
+    ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
+       $atime,$mtime,$ctime,$blksize,$blocks)
+           = stat($filename);
+    $time = time();
+    if ($time - $mtime > $old) {
+	print "$filename: is OLD - unlinking\n";
+	unlink($filename);
+	$nold++;
+    } else {
+	print "$filename: is YOUNG! - leaving\n";
+	$nyoung++;
+    }
+}
+print ("Deleted $nold old files, kept $nyoung young files\n");
+
+

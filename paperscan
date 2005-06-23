@@ -1,0 +1,45 @@
+#!/bin/bash
+
+year=1996
+prefix=`echo cccg$year\_`
+datadir=~/images
+files=$datadir/*.png
+bibfile=index.bib
+baseurl="http://www.cccg.ca/proceedings/$year/"
+
+i=0;
+filename=`printf "%s%.4d" $prefix $i`
+#printf "%s%.4d" $prefix $i
+while [[ -e $filename.pdf ]]; do
+	((i++))
+	filename=`printf "%s%.4d" $prefix $i`
+done
+
+
+echo -n "Snarfing source files $files..."
+src=
+for f in $files; do
+	tmp=`basename $f`
+	src="$src $tmp"
+done
+mv $files .
+echo "done."
+
+echo -n "Converting to pdf..."
+convert $src $filename.pdf
+echo "done."
+
+echo -n "Writing BibTeX file..."
+cat - <<.END > $filename.bib
+@InProceedings{$filename,
+  author={No Author Given},
+  title={No Title Given},
+  booktitle=cccg$year,
+  pages={??--??},
+  url={$baseurl$filename.pdf},
+  src={$src},
+  year={$year},
+}
+.END
+echo "done."
+

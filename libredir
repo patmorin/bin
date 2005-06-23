@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+open(FILE, ">>/home/morin/redirinput");
+print(FILE "libredir is starting\n");
+close(FILE);
+ 
+# Disable output and input buffering
+$| = 1;
+if ($BSD_STYLE) {
+    system "stty cbreak </dev/tty >/dev/tty 2>&1";
+} else {
+    system "stty", '-icanon', 'eol', "\001";
+}
+undef $/;
+
+# Read urls from stdin and send them back to stdout
+while (<>) {
+    open(FILE, ">>/home/morin/redirinput");
+    print(FILE "$_\n");
+    close(FILE);
+}
+
+
+while ($key = getc(STDIN)) {
+    open(FILE, ">>/home/morin/redirinput");
+    print(FILE "$key");
+    close(FILE);
+}
+

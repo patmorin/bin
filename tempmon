@@ -1,0 +1,8 @@
+#!/bin/bash
+
+clear
+while [[ 1 ]]; do
+    echo -en "\r" `awk '{print $(NF-1) $(NF)}' /proc/acpi/thermal_zone/THRM/temperature`
+    sleep 2
+done
+

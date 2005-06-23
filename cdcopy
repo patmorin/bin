@@ -1,0 +1,50 @@
+#!/bin/bash
+
+################################################################################
+# User configurable parameters
+################################################################################
+# The CDROM drive to use for reading
+cdrom=/dev/cdrom
+
+# The CD-R(W) drive to use for writing
+cdrw=/dev/cdrom
+
+# The SCSI address of the CD-R(W) drive as reported by cdrecord -scanbus
+cdrwdev=ATA:1,0,0
+
+# The speed to burn at. Usually half the drive's maximum speed is a good choice
+speed=24
+
+################################################################################
+# Programmer stuff -- Don't edit unless you know what you are doing
+################################################################################
+# Get the music CD into the CD-ROM drive
+eject $cdrom
+echo "Insert music CD into $cdrom and press <enter>"
+read
+eject -t $cdrom
+
+# Get the CD-R(W) into the CD-RW drive if it's a different drive
+if [[ $cdrom != $cdrw ]]; then
+	eject $cdrw
+	echo "Insert CD-R or CD-RW into $cdrw and press <enter>"
+	read
+fi
+
+# Rip the CD
+cdparanoia -w -B -d $cdrom
+
+# Swap the CD and CD-R if the read drive and write drive are the same
+if [[ $cdrom == $cdrw ]]; then
+	eject $cdrw
+	echo "Insert CD-R or CD-RW into $cdrw and press <enter>"
+	read
+fi
+
+# Start recording
+cdrecord -v -dao -eject speed=$speed dev=$cdrwdev track??.cdda.wav
+
+echo -e "\7Done, check output for errors"
+
+rm -f track??.cdda.wav
+
