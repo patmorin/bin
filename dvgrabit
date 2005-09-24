@@ -1,0 +1,7 @@
+#!/bin/bash
+
+APP=dvgrab
+FLAGS=--size 0 --autosplit
+
+$APP $FLAGS aus2
+
