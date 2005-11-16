@@ -6,7 +6,7 @@ OVC=xvid
 #DEVICE="-dvd-device cdrom1"
 
 snippet() {
-    SNIPPETOPTS="-ss 1:00 -endpos 60"
+    SNIPPETOPTS="-ss 15:00 -endpos 60"
 }
 
 subtitles() {
@@ -74,10 +74,11 @@ UNIQ=`date +%s`
 OUTPUT=movie-$OVC-$OAC-br$BITRATE-$UNIQ.avi
 
 rm -f frameno.avi xvid-twopass.stats
-mencoder $DEVICE $INPUT -ovc frameno -oac $OAC $SNIPPETOPTS $SUBTITLEOPTS -o frameno.avi
-mencoder $DEVICE $INPUT -ovc $OVC -oac $OAC -xvidencopts pass=1:$XVIDOPTS \
-	$SNIPPETOPTS -o /dev/null
-mencoder $DEVICE $INPUT -ovc $OVC -oac $OAC -xvidencopts pass=2:$XVIDOPTS \
-	$SNIPPETOPTS -o $OUTPUT
+mencoder $DEVICE $INPUT -ovc frameno -aid 128 -oac $OAC \
+	$SNIPPETOPTS $SUBTITLEOPTS -o frameno.avi
+mencoder $DEVICE $INPUT -ovc $OVC -aid 128 -oac $OAC \
+	-xvidencopts pass=1:$XVIDOPTS $SNIPPETOPTS -o /dev/null
+mencoder $DEVICE $INPUT -ovc $OVC -aid 128 -oac $OAC \
+	-xvidencopts pass=2:$XVIDOPTS $SNIPPETOPTS -o $OUTPUT
 rm -f frameno.avi xvid-twopass.stats
 exit 0

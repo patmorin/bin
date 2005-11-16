@@ -10,7 +10,7 @@ files=./*.bmp
 for f in $files; do
 	fp=`basename ${f%.bmp}.tiff`
 	echo "$f => /tmp/$fp"
-	convert -rotate 270 $f /tmp/$fp
+	convert $f /tmp/$fp
 	tmpfiles="$tmpfiles /tmp/$fp"
 done
 echo "Making pdf file..."
