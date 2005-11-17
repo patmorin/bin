@@ -1,7 +1,8 @@
 #!/bin/bash
 
-APP=dvgrab
-FLAGS=--size 0 --autosplit
+APP="dvgrab"
+FLAGS="--size 0 --autosplit"
+BASENAME="aus1"
 
-$APP $FLAGS aus2
+$APP $FLAGS $BASENAME
 
