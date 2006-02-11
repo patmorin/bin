@@ -13,6 +13,11 @@ subtitles() {
     SUBTITLEOPTS="-vobsubout subtitles -vobsuboutindex 0 -sid 0"
 }
 
+lecture_quality() {
+    OAC=mp3lame
+    BITRATE=1400
+}
+
 dvd_quality() {
     OAC=copy
     BITRATE=1000
@@ -44,6 +49,9 @@ fi
 
 while [ ! -z $1 ]; do
     case "$1" in
+	lecture)
+	    lecture_quality
+	    ;;
 	dvd)
 	    dvd_quality
 	    ;;
