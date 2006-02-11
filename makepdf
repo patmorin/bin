@@ -11,7 +11,9 @@ for f in $files; do
 	fp=`basename ${f%.bmp}.tiff`
 	echo "$f => /tmp/$fp"
 	convert $f /tmp/$fp
-	tmpfiles="$tmpfiles /tmp/$fp"
+	echo "$f => /tmp/x-$fp"
+	tiffcp -c g4 -r 100000 /tmp/$fp /tmp/x-$fp
+	tmpfiles="$tmpfiles /tmp/x-$fp"
 done
 echo "Making pdf file..."
 c42pdf $tmpfiles -o paper.pdf
