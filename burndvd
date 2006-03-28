@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [[ ! -e $1 ]]; then
+	echo "Usage:  $0 <isofile.iso>"
+	exit -1
+fi
+
+/usr/bin/growisofs -dvd-compat -Z /dev/dvd=$1
+
