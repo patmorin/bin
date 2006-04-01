@@ -3,7 +3,7 @@
 # Use xvid codec
 OVC=xvid
 
-#DEVICE="-dvd-device cdrom1"
+DEVICE="-dvd-device /dev/dvd1"
 
 snippet() {
     SNIPPETOPTS="-ss 15:00 -endpos 60"
