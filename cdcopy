@@ -4,7 +4,7 @@
 # User configurable parameters
 ################################################################################
 # The CDROM drive to use for reading
-cdrom=/dev/cdrom
+cdrom=/dev/cdrom1
 
 # The CD-R(W) drive to use for writing
 cdrw=/dev/cdrom
