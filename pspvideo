@@ -1,0 +1,10 @@
+#!/bin/bash
+
+
+infile=$1
+outfile=MOVI0001.MP4
+
+ffmpeg -i $infile -acodec aac -ab 128 -vcodec mpeg4 -b 1200
+-ar 24000 -mbd 2 -flags +4mv+trell -aic 2 -cmp 2 -subcmp 2 -s 368x192
+-r 30000/1001 -title X -f psp $outfile
+
