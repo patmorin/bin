@@ -1,0 +1,12 @@
+#!/bin/bash
+
+infile=$1
+outfile=MOVI0002.MP4
+
+# use 368x208 for widescrren 16:9
+
+ffmpeg -i $infile -acodec aac -ab 128 -vcodec mpeg4 -b 350000 \
+	-ar 24000 -mbd 2  -flags +4mv+trell -aic 2 -cmp 2 -subcmp 2 \
+	-s 320x240 -r 29.97 -aspect 4:3 -title X -f psp $outfile 
+# 
+
