@@ -16,6 +16,6 @@ for f in $files; do
 	tmpfiles="$tmpfiles /tmp/x-$fp"
 done
 echo "Making pdf file..."
-c42pdf $tmpfiles -p l -o paper.pdf
+c42pdf $tmpfiles -p A4 -o paper.pdf
 echo "Output is in paper.pdf"
 
