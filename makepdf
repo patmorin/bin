@@ -6,14 +6,20 @@
 
 files=~/.kde/share/apps/ScanImages/*.bmp
 files=./*.bmp
+files=./*.jpeg
 
 for f in $files; do
-	fp=`basename ${f%.bmp}.tiff`
-	echo "$f => /tmp/$fp"
-	convert $f /tmp/$fp
-	echo "$f => /tmp/x-$fp"
-	tiffcp -c g4 -r 100000 /tmp/$fp /tmp/x-$fp
-	tmpfiles="$tmpfiles /tmp/x-$fp"
+        base=`basename ${f%.jpeg}`
+        bmp="/tmp/$base.bmp"
+	echo "$f => $bmp"
+        convert -colors 2 "$f" "$bmp"
+	fp="/tmp/$base.tiff"
+	echo "$bmp => $fp"
+	convert -colors 2 $bmp $fp
+	echo "$fp => /tmp/x-$fp"
+        xf="/tmp/x-$base.tiff"
+	tiffcp -c g4 -r 100000 $fp $xf
+	tmpfiles="$tmpfiles $xf"
 done
 echo "Making pdf file..."
 c42pdf $tmpfiles -p l -o paper.pdf
