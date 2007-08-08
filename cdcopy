@@ -4,10 +4,10 @@
 # User configurable parameters
 ################################################################################
 # The CDROM drive to use for reading
-cdrom=/dev/cdrom1
+cdrom=/dev/hdd
 
 # The CD-R(W) drive to use for writing
-cdrw=/dev/cdrom
+cdrw=/dev/hdc
 
 # The SCSI address of the CD-R(W) drive as reported by cdrecord -scanbus
 cdrwdev=ATA:1,0,0
