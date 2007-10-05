@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
 
-$qdir="/home2/morin/.ask/queue";    # directory to delete old files in
+$qdir="/home2bak/morin/.ask/queue";    # directory to delete old files in
 $old= 60*60*24*7;           # how many seconds is considered old
 
 opendir(DIR, $qdir) || die "can't opendir $qdir: $!";

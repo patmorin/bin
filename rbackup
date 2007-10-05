@@ -1,0 +1,23 @@
+#!/bin/bash
+
+function rotate() {
+  local dstdir="$1"
+  local nv="7"
+  
+  local i="$nv"
+  rm -rf "$dstdir.$i"
+  local prev="$i"
+  while [[ $((i--)) -gt 0 ]]; do
+    mv "$dstdir.$i" "$dstdir.$prev"
+    prev="$i"
+  done
+}
+
+
+srcdir="${1%/}"
+dstdir="${2%/}"
+
+echo "Backing up $srcdir onto $dstdir"
+rotate $dstdir
+rsync -a --delete --link-dest="$dstdir.1" "$srcdir/" "$dstdir.0"
+
