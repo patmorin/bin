@@ -5,5 +5,5 @@ if [[ ! -e $1 ]]; then
 	exit -1
 fi
 
-/usr/bin/growisofs -dvd-compat -Z /dev/dvd=$1
+/usr/bin/growisofs -dvd-compat -Z /dev/dvdrw=$1
 
