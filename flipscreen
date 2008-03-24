@@ -1,0 +1,9 @@
+#!/bin/bash
+
+laptop=`xrandr | grep LVDS`
+if [[ "$laptop" =~ "1024x768" ]]; then
+  mode="tablet"
+else
+  mode="laptop"
+fi
+/usr/local/bin/rotate "$mode"

@@ -1,0 +1,140 @@
+#!/usr/bin/python
+
+import os, sys, re
+
+  # All allowed rotations
+rotations = ['normal', 'right', 'inverted', 'left']
+
+  # Keyboard scan codes for arrow keys
+scanCodes = {'up': 0x71, 'dn': 0x6f, 'lt': 0x6e, 'rt': 0x6d}
+
+  # Keycodes to use for each rotation
+  # 104 = pgup, 109 = pgdn, 105 = left, 106 = right, 103 = up, 108 = down
+keyCodes = {
+            'normal':   {'up': 103, 'dn': 108, 'lt': 105, 'rt': 106},
+            'right':    {'up': 105, 'dn': 106, 'lt': 108, 'rt': 103},
+            'inverted': {'up': 108, 'dn': 103, 'lt': 106, 'rt': 105},
+            'left':     {'up': 106, 'dn': 105, 'lt': 103, 'rt': 108}
+          }
+
+  # Rotations to pick from when no specific rotation is given
+preferredRotations = rotations
+
+  # Rotation to use when switched to tablet mode
+tabletMode = "right"
+  
+  # Tells the program to stay open when in tablet mode and 
+  # rotate using the orientation sensor
+tabletAutoRotate = True
+  
+  # Rotation to use when switched to normal laptop mode
+laptopMode = "normal"
+
+
+## If a local xsetwacom is installed, it should probably take precedent (?)
+if os.path.isfile('/usr/local/bin/xsetwacom'):
+  xsetwacom = '/usr/local/bin/xsetwacom'
+elif os.path.isfile('/usr/bin/xsetwacom'):
+  xsetwacom = '/usr/bin/xsetwacom'
+else:
+  ## If it's not one of those two, just hope it's in the path somewhere.
+  xsetwacom = 'xsetwacom'
+
+xrandr = '/usr/bin/xrandr'
+
+
+
+def main():
+  setEnv()
+  
+    # list of wacom devices to be rotated
+  devices = listDevices()
+  
+  if len(sys.argv) < 2:     # No rotation specified, just go to the next one in the preferred list
+    cr = getCurrentRotation()
+    if cr in preferredRotations:
+      nextIndex = (preferredRotations.index(cr) + 1) % len(preferredRotations)
+    else:
+      nextIndex = 0
+    next = preferredRotations[nextIndex]
+  else:
+    next = sys.argv[1]
+    if not next in rotations:
+      if next == "tablet":
+        next = tabletMode
+      elif next == "laptop":
+        next = laptopMode
+      else:
+        sys.stderr.write("Rotation \"%s\" not allowed (pick from %s, tablet, laptop)\n" % (next, ', '.join(rotations)))
+        sys.exit(-1)
+  setRotation(next, devices)
+
+
+
+def runCmd(cmd):
+  f = os.popen(cmd)
+  l = f.readlines()
+  f.close()
+  return l
+
+def getCurrentRotation():
+  #setEnv()
+  try:
+    rrv = randrVersion()
+    if rrv < '1.2':
+      l = [s for s in runCmd(xrandr) if re.match('Current rotation', s)]
+      r = re.sub('Current rotation - ', '', l[0])
+      return r.strip()
+    elif rrv >= '1.2':
+      l = runCmd(xrandr) #"%s | grep 'LVDS connected' | gawk '{print $4}' | sed -e 's/(//'" % xrandr)
+      l = [x for x in l if re.search(r'(LVDS|default) connected', x)][0]
+      l = l.split(' ')[3]
+      l = re.sub(r'\(', '', l)
+      
+      return l.strip()
+  except:
+    sys.stderr.write("Can not determine current rotation, bailing out :(")
+    sys.exit(-1)
+
+def setRotation(o, devices):
+  #setEnv()
+  runCmd("%s --output LVDS --rotate %s" % (xrandr, o))
+  wacomRots = {'normal': '0', 'left': '2', 'right': '1', 'inverted': '3'}
+  for d in devices:
+    runCmd("%s set %s Rotate %s" % (xsetwacom, d, wacomRots[o]))
+  setKeymap(o)
+
+def setEnv():
+  if os.environ.has_key('DISPLAY'):
+    return  # DISPLAY is already set, don't mess with it.
+  
+  if os.system('pidof kdm > /dev/null') == 0:
+    kdmsts = '/var/lib/kdm/kdmsts'
+    if os.access(kdmsts, os.R_OK):
+      kdmdata = open(kdmsts).readlines()
+      userline = [s for s in kdmdata if re.match(r':0=', s)][0]
+      user = re.sub(r':0=', '', userline).strip()
+      os.environ['DISPLAY'] = ':0.0'
+      os.environ['XAUTHORITY'] = '/home/%s/.Xauthority' % user
+  elif os.system('pidof gdm > /dev/null') == 0:
+    os.environ['DISPLAY'] = ':0.0'
+    os.environ['XAUTHORITY'] = '/var/lib/gdm/:0.Xauth'
+  
+def setKeymap(o):
+  for sc in scanCodes.keys():
+    os.system('sudo setkeycodes %x %d' % (scanCodes[sc], keyCodes[o][sc]))
+
+
+def randrVersion():
+  #setEnv()
+  xrv = runCmd('%s -v' % xrandr)[0]
+  xrv = re.sub(r'.*version ', '', xrv)
+  return xrv.strip()
+
+def listDevices():
+  #setEnv()
+  dev = runCmd("%s list dev | awk {'print $1'}" % xsetwacom)
+  dev = map(lambda s: s.strip(), dev)
+  return dev
+   
+main()
