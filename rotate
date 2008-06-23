@@ -49,6 +49,7 @@ def main():
   
     # list of wacom devices to be rotated
   devices = listDevices()
+  devices = [ "stylus" ]  # Hardcoded because "xsetwacom list dev" is broken
   
   if len(sys.argv) < 2:     # No rotation specified, just go to the next one in the preferred list
     cr = getCurrentRotation()
