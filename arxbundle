@@ -3,14 +3,15 @@
 # the arxiv
 
 
-r=$1
+r=${1%.tex}
 if [[ ! -e $r.tex ]]; then
-  echo "File $r.tex does not exist - quitting!"
+  echo "File \"$r.tex\" does not exist - quitting!"
+  echo "Usage: $0 <texfile>"
   exit -1
 fi
 
 # latex the document and extract the file list from the log file
-pdflatex $r
+latex $r
 fl=`awk 'BEGIN {record=0;}
    /\*File List\*/ {record=1;}
    /\*\*\*\*\*\*/ {record=0;}
@@ -24,7 +25,10 @@ for f in $fl; do
 done
 fp="$r.tex $fp"
 
+echo "!!!!NOTE: Your latex file must include the \listfiles command!!!!"
 # make an archive of everything
 echo "Creating archive..."
 tar czvf $r.tgz $fp | awk '{print "  " $1}'
 echo "done"
+echo "!!!!NOTE: Your latex file must included the \listfiles command!!!!"
+echo "Created file $r.dvi - check the pdflatex output for errors"
