@@ -1,0 +1,6 @@
+#!/bin/bash
+
+DIR=~/bin
+
+java -classpath $DIR:$DIR/iText-2.1.5.jar TwoOnOne "$1" "$2" "$3"
+ 
