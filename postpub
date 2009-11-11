@@ -11,10 +11,6 @@ base=$1
 tag=$2
 dir=$3
 
-latex $base
-latex $base
-dvips -t letter -o $base.ps $base
-gzip $base.ps
 pdflatex $base
 pdflatex $base
 
@@ -24,6 +20,5 @@ else
     r=$base-$tag
 fi
 
-mv $base.ps.gz $r.ps.gz
 mv $base.pdf $r.pdf
-scp $r.pdf $r.ps.gz morin@cg.scs.carleton.ca:public_html/publications/$dir/
+scp $r.pdf  morin@cg.scs.carleton.ca:public_html/publications/$dir/
