@@ -10,12 +10,12 @@ if [[ ! -e $r.tex ]]; then
   exit -1
 fi
 
-# latex the document and extract the file list from the log file
-latex $r
+# pdflatex the document and extract the file list from the log file
+pdflatex $r
 fl=`awk 'BEGIN {record=0;}
    /\*File List\*/ {record=1;}
    /\*\*\*\*\*\*/ {record=0;}
-   { if (record && record++ >= 2) { print $1; } }' $r.log`
+   { if (record && record++ >= 2) { print $1; } }' $r.log | sort | uniq`
 
 # take only files in the current directory
 for f in $fl; do

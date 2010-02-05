@@ -2,11 +2,12 @@
 # Converts the picture elements in ipe file to pdf files
 # Usage : ipe2pdf [<file1> <file2> ...]
 
-if [ "$1" == '' ] ; then
+if [[ $# -eq 0 ]] ; then
     files=*.xml
 else
-    files=$1
+    files="$@"
 fi
+echo $files
 
 for f in $files ; do
     if [[ ! -e $f  ]] ; then
