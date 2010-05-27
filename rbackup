@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# unique identifier to append onto directory name
+u="uniq548dsjs67"
+
 function rotate() {
   local dstdir="$1"
   local nv="7"
@@ -13,11 +16,19 @@ function rotate() {
   done
 }
 
+if [[ $# -ne 2 ]]; then
+  echo "Usage $0 <srcdir> <dstdir>"
+  exit 1
+fi
 
 srcdir="${1%/}"
 dstdir="${2%/}"
 
 echo "Backing up $srcdir onto $dstdir"
+if [[ -e "$dstdir.$u" ]]; then
+  echo "WARNING: - intermediate directory alread exists - updating it"
+fi
+rsync -a --delete --link-dest="$dstdir.0" "$srcdir/" "$dstdir.$u"
 rotate $dstdir
-rsync -a --delete --link-dest="$dstdir.1" "$srcdir/" "$dstdir.0"
+mv "$dstdir.$u" "$dstdir.0"
 
