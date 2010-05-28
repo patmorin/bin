@@ -1,7 +1,5 @@
-#!/bin/bash
-# Bundle the files used by pdflatex into a single file to submit to
-# the arxiv
-
+#!/bin/bash -e
+# Bundle the files used by pdflatex into a single file 
 
 r=${1%.tex}
 if [[ ! -e $r.tex ]]; then
@@ -12,9 +10,9 @@ fi
 
 # pdflatex the document and extract the file list from the log file
 pdflatex $r
-fl=`awk 'BEGIN {record=0;}
-   /\*File List\*/ {record=1;}
-   /\*\*\*\*\*\*/ {record=0;}
+fl=`awk --posix 'BEGIN {record=0;}
+   /^[[:space:]]*\*File List\*[[:space:]]*$/ {record=1;}
+   /^[[:space:]]*\*{3,}[[:space:]]*$/ {record=0;}
    { if (record && record++ >= 2) { print $1; } }' $r.log | sort | uniq`
 
 # take only files in the current directory
@@ -23,12 +21,18 @@ for f in $fl; do
     fp="$fp $f"
   fi
 done
-fp="$r.tex $r.bib $fp"
+
+if [[ -e $r.bib ]]; then
+  bibfile=$r.bib
+else
+  bibfile=""
+fi
+fp="$r.tex $bibfile $fp"
 
 echo "!!!!NOTE: Your latex file must include the \listfiles command!!!!"
 # make an archive of everything
 echo "Creating archive..."
-tar czvf $r.tgz $fp | awk '{print "  " $1}'
+tar czvf $r.tgz $fp
 echo "done"
 echo "!!!!NOTE: Your latex file must included the \listfiles command!!!!"
 echo "Created file $r.dvi - check the pdflatex output for errors"
