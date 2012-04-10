@@ -1,0 +1,41 @@
+#!/bin/bash -e
+
+echo $0
+
+dir=$1
+echo "Working in ~/Dropbox/Public/$dir"
+cd ~/Dropbox/Public/$dir
+
+
+urlhead="http://dl.dropbox.com/u/2333481"
+
+header=`cat <<END
+<html>
+  <head>
+    <title>Public Dropbox - Pat Morin</title>
+  </head>
+  <body>
+    <h1>Public Dropbox $dir</h1>
+    <ul>
+END
+`
+
+for f in *; do
+   echo $f
+   if [[ -f $f ]]; then
+     index="$index      <li><a href='$urlhead/$f'>$f</a></li>\n"
+   elif [[ -d $f ]]; then
+     index="$index      <li><a href='$urlhead/$f/index.html'>$f</a> (directory)</li>\n"
+     "$0" "$dir/$f"   #recurse
+   fi 
+done
+
+footer=`cat <<'END'
+    </ul>
+  </body>
+</html>
+END
+`
+
+echo -e "$header\n$index\n$footer" > index.html
+
