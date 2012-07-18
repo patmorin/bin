@@ -7,5 +7,6 @@ if [[ $# -ne 3 ]]; then
   exit -1
 fi
 DIR=${0%/pdfovl}
+echo $DIR
 java -classpath $DIR:$DIR/iText-2.1.5.jar PDFOverlay "$1" "$2" "$3"
  

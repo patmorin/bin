@@ -1,13 +1,15 @@
 #!/bin/bash -e
 
-echo $0
-
-dir=$1
-echo "Working in ~/Dropbox/Public/$dir"
+## This should be your dropbox user id
+## Get it by using the 'get public url' feature in dropbox
+uid=2333481
+dir="${1%/}"
 cd ~/Dropbox/Public/$dir
 
-
-urlhead="http://dl.dropbox.com/u/2333481"
+urlhead="http://dl.dropbox.com/u/$uid"
+if [ -n $dir ]; then
+  urlhead="$urlhead/$dir"
+fi
 
 header=`cat <<END
 <html>
@@ -21,12 +23,16 @@ END
 `
 
 for f in *; do
-   echo $f
+   if [ -z $dir ]; then echo $"  $f" ; else echo "  $dir/$f" ; fi
    if [[ -f $f ]]; then
      index="$index      <li><a href='$urlhead/$f'>$f</a></li>\n"
    elif [[ -d $f ]]; then
      index="$index      <li><a href='$urlhead/$f/index.html'>$f</a> (directory)</li>\n"
-     "$0" "$dir/$f"   #recurse
+     if [ -z $dir ]; then
+        "$0" "$f"   #recurse
+     else
+        "$0" "$dir/$f"   #recurse
+     fi
    fi 
 done
 

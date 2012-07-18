@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # unique identifier to append onto directory name
-u="uniq548dsjs67"
+u="uniq548dsjs67-`date +%s`"
 
 function rotate() {
   local dstdir="$1"

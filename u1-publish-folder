@@ -1,0 +1,169 @@
+#!/usr/bin/python
+import os, sys, string, cgi
+
+if sys.platform != 'win32':
+    from twisted.internet import glib2reactor
+    glib2reactor.install()
+    from dbus.mainloop.glib import DBusGMainLoop
+    DBusGMainLoop(set_as_default=True)
+
+from twisted.internet import defer, reactor
+from ubuntuone.platform.tools import SyncDaemonTool
+
+TEMPLATE = """<!doctype html>
+<html>
+<head>
+<meta charset=utf8>
+<link href='http://fonts.googleapis.com/css?family=Ubuntu:400,700,400italic,700italic' 
+    rel='stylesheet' type='text/css'>
+<style>
+body {
+    font-family: Ubuntu, sans-serif;
+}
+footer p {
+    position: fixed;
+    bottom: 5px;
+    right: 5px;
+    text-align: right;
+    opacity: 0.4;
+    font-size: 14px;
+}
+footer a {
+    display: block;
+}
+</style>
+<title>Files in $foldername</title>
+</head>
+<body>
+<h1>List of files in $foldername</h1>
+<ul>
+$begin_file_loop
+<li><a href="${url}">${name}</a> (${size})</li>
+$end_file_loop
+</ul>
+<footer>
+<p>published with <a href="https://one.ubuntu.com"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFsAAAAhCAMAAACBUScMAAAAAXNSR0IArs4c6QAAAGNQTFRFMzMzPz8%2FTExMWVlZ3UcXZmZm31Ilc3Nz4V40f39%2F42lC5XVRjIyM54BfmJiY6YxupaWl65d87aKKsrKy8K6Zv7%2B%2F8rmny8vL9MW29tDE2NjY%2BNzT5eXl%2Bufh8vLy%2FPPw%2F%2F%2F%2F0a4i0gAAAAFiS0dEAIgFHUgAAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfbAhURJxBzvNnHAAAAGXRFWHRDb21tZW50AENyZWF0ZWQgd2l0aCBHSU1QV4EOFwAAAhRJREFUSMfd1tuSoyAQAFCcQRMlakSiQaPw%2F1%2B53TS65qKYmso8TL9w9cRAQ8ns3hjsu8F2zsu5%2FJgtdtjmY3af8I%2FZmv%2BqXQmKq%2FtfvkFjjaioaNAWGedZQ5PsVOhScOiWZOOjvR%2BGhxmOQRyn33ZBtuSCCok2RTm%2FoCvkXTeG9sPw8GTroJ1pa0rOmwc7M667x7aGME92boO2pGXPH2w3JeFqXu8ne9hpNzD2wsbRNVvanbZ%2B384oIz5ic5ryYCvKnqVdQZfBndu0TdjWhCxsk2C2JVy%2BsK1PNoO5FLQBOTZaC7JzrVXCE9h1SDmpdfVoH3l21VUPjUThU9v21Tf%2Fn50E%2F4jJ5mlLu%2FFz4dIictO2A94IlYJ37WUuRK7oGjUKGqWEJdCycamJdbwAhBxw2D3Vb9s%2Fiz9q13Ecn0eodMUBqqcb9R587w%2Fs8ZthRJ21MZurvvc7iLN8wz6wqG4vX%2BwL7bRt64jF1p6gd4RqGrTlun1j7ILLwVgNdgHVC2N2xCasC4uCtj8fGd7rWt3ZZ3xh9%2Fqpt8HtwG8hoLiFbMNfBI0VuAK%2BJNuCW7Ap2uC3T%2Fm2HcUUXdAeVu3nNUEbFmPcmd94Ta%2FYN9q1xV6iDb3n%2Fd%2BDcsXGHDxj4rkcnGybMnaCzTx1e2yrxZ18LF%2Bdndke%2FTmqd37HuisUIpdKLz9H59NdFy4rigITr05hJ4tQCtp%2FRgAMzqyMVToAAAAASUVORK5CYII%3D" alt="Ubuntu One"></a></p>
+</footer>
+</body>
+</html>
+"""
+
+@defer.inlineCallbacks
+def process_folder(folder):
+    sd = SyncDaemonTool()
+    
+    template = TEMPLATE
+    template_file = None
+    try:
+        before, allafter = template.split("$begin_file_loop",1)
+        loop, after = allafter.split("$end_file_loop", 1)
+    except ValueError:
+        print "Template is invalid (does not contain $begin_file_loop and $end_file_loop)"
+        reactor.stop()
+        return
+    
+    print "Examining folder %s" % (folder,)
+    
+    # Confirm the folder is synced
+    try:
+        info = yield sd.get_metadata(path=folder)
+    except Exception as e:
+        if e.name == "org.freedesktop.DBus.Python.KeyError":
+            print "%s is not synced with Ubuntu One. Terminating." % (folder,)
+            reactor.stop()
+            return
+        raise
+    
+    # Get file details for all files in the folder
+    filedetails = {}
+    for f in os.listdir(folder):
+        fn = os.path.join(folder, f)
+        if not os.path.isfile(fn):
+            continue
+        try:
+            fileinfo = yield sd.get_metadata(path=fn)
+        except:
+            pass
+        bytes = os.path.getsize(fn)
+        size = "large"
+        suffixes = { 1024: " bytes", 1024*1024: "KB", 1024*1024*1024: "MB", 1024*1024*1024*1024: "GB" }
+        for ceiling in sorted(suffixes.keys()):
+            if bytes < ceiling:
+                if ceiling == 1024:
+                    subst = "%0.1d%s"
+                else:
+                    subst = "%0.1f%s"
+                size = subst % (bytes / (ceiling / 1024.0), suffixes[ceiling])
+                break
+
+        filedetails[fn] = {"url": None, "name": os.path.split(fn)[1],
+            "size": size}
+
+    # now get the list of all public files
+    publicfiles = yield sd.get_public_files()
+    for pf in publicfiles:
+        if pf["path"] in filedetails:
+            filedetails[pf["path"]]["url"] = unicode(pf["public_url"])
+    
+    unpublished = [x[0] for x in filedetails.items() if x[1]["url"] is None]
+    if unpublished:
+        print "Publishing %s file%s..." % (len(unpublished), "" if len(unpublished) == 1 else "s")
+        for fn in unpublished:
+            done = yield sd.change_public_access(fn, True)
+            print "  published %s" % (fn,)
+            filedetails[fn]["url"] = unicode(done["public_url"])
+    else:
+        print "All files are already published."
+    
+    print "Constructing the folder index..."
+    lines = [string.Template(loop).safe_substitute(x) for x in filedetails.values()
+        if x["name"] != "u1-folder-index.html"]
+    
+    out = "%s%s%s" % (
+        string.Template(before).safe_substitute(
+            foldername=os.path.split(folder)[1]), 
+        "".join(lines), 
+        string.Template(after).safe_substitute(
+            foldername=os.path.split(folder)[1]))
+        
+    outfn = os.path.join(folder, "u1-folder-index.html")
+    
+    if os.path.exists(outfn):
+        fp = open(outfn)
+        existing_data = fp.read()
+        fp.close()
+    else:
+        existing_data = None
+    
+    if existing_data == out:
+        print "Files have not changed; no need to write index"
+        print "Folder index available at %s" % filedetails[outfn]["url"]
+    else:
+        # write folder index and hang about until it's uploaded
+        print "Waiting for Ubuntu One to upload index..."
+        success_filter = lambda path, info: path == outfn
+        d = sd.wait_for_signals(signal_ok='UploadFinished', success_filter=success_filter)
+        fp = open(outfn, "w")
+        fp.write(out)
+        fp.close()
+        path, info = yield d
+        print "Done."    
+        print "Publishing the folder index..."
+        # publish folder index
+        done = yield sd.change_public_access(outfn, True)
+        print "Folder index now available at %s" % unicode(done["public_url"])
+    
+    reactor.stop()
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        folder = sys.argv[1]
+    else:
+        print "Syntax: %s folder" % sys.argv[0]
+        sys.exit(1)
+    folder = os.path.realpath(folder)
+    if not os.path.isdir(folder):
+        print "%s is not a folder. Terminating." % (folder,)
+        sys.exit(1)
+    reactor.callWhenRunning(process_folder, folder)
+    reactor.run()
