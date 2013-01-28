@@ -1,0 +1,13 @@
+#!/bin/bash -ex
+
+r=${1%.pdf}
+if [[ ! -e "$r.pdf" ]]; then
+    echo "Usage: $0 <file.pdf>"
+    echo "File \"$r.pdf\" does not exist - quitting!"
+    exit -1
+fi
+b="`basename $r`"
+mkdir -p ~/public_html/publications/drafts/"$b"
+cp "$r.pdf" ~/public_html/publications/drafts/"$b/$r-`date +%Y-%m-%d`.pdf"
+
+
