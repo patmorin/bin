@@ -9,11 +9,14 @@ if [[ ! -e $r.tex ]]; then
 fi
 
 # pdflatex the document and extract the file list from the log file
-pdflatex $r
-fl=`awk --posix 'BEGIN {record=0;}
-   /^[[:space:]]*\*File List\*[[:space:]]*$/ {record=1;}
-   /^[[:space:]]*\*{3,}[[:space:]]*$/ {record=0;}
+latexmk -pdf "$r"
+fl=`mawk 'BEGIN {record=0;}
+   /^ *\*File List\* *$/ {record=1;}
+   / *\*\*\*+ *$/ {record=0;}
    { if (record && record++ >= 2) { print $1; } }' $r.log | sort | uniq`
+
+echo "File List is $fl"
+echo "END FILE LIST"
 
 # take only files in the current directory
 for f in $fl; do
@@ -22,17 +25,18 @@ for f in $fl; do
   fi
 done
 
-if [[ -e $r.bib ]]; then
-  bibfile=$r.bib
-else
-  bibfile=""
-fi
-fp="$r.tex $bibfile $fp"
+for f in *.bib; do
+  echo "Adding bibtex file $f"
+  fp="$f $fp"
+done
+
+fp="$r.tex $fp"
+
+fp="$r.pdf $fp"
 
 echo "!!!!NOTE: Your latex file must include the \listfiles command!!!!"
 # make an archive of everything
-echo "Creating archive..."
-tar czvf $r.tgz $fp
-echo "done"
-echo "!!!!NOTE: Your latex file must included the \listfiles command!!!!"
-echo "Created file $r.dvi - check the pdflatex output for errors"
+echo "Creating TGZ archive..."
+tar czvf "$r.tgz" $fp |  sed 's/^ */  /' 
+echo "Creating ZIP archive..."
+zip "$r.zip" $fp | sed 's/^ */  /' 
